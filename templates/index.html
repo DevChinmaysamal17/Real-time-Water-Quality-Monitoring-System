@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Water Quality Monitoring System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="login-page" id="login-page">
+        <div class="login-box">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="village-id" placeholder="Village ID" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container" id="dashboard" style="display:none;">
+        <header>
+            <h1>IoT Water Quality Monitoring</h1>
+        </header>
+        <div style="margin-bottom: 15px;">
+            <label>Update Interval (seconds):</label>
+            <input type="number" id="interval" value="30" min="5">
+            <button onclick="changeInterval()">Apply</button>
+        </div>
+
+        <div class="dashboard">
+            <h2>Dashboard</h2>
+
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>pH Level</h3>
+                    <div class="value" id="ph-value">--</div>
+                </div>
+
+                <div class="status-card">
+                    <h3>Turbidity</h3>
+                    <div class="value" id="turbidity-value">--</div>
+                </div>
+
+                <div class="status-card">
+                    <h3>Temperature</h3>
+                    <div class="value" id="temp-value">--</div>
+                </div>
+
+                <div class="status-card">
+                    <h3>TDS</h3>
+                    <div class="value" id="tds-value">--</div>
+                </div>
+
+                <div class="status-card overall">
+                    <h3>Overall Status</h3>
+                    <div class="value safe" id="overall-status">SAFE</div>
+                </div>
+                <div class="status-card overall">
+                    <h3>ML Prediction</h3>
+                    <div class="value" id="ml-output">--</div>
+                </div>
+
+            </div>
+
+            <div class="alert-box" id="alert-box">
+                <h3>No Active Alerts</h3>
+                <p>All parameters are within safe limits.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fetchTimer = null;
+
+        const loginForm = document.getElementById("login-form");
+        const loginPage = document.getElementById("login-page");
+        const dashboard = document.getElementById("dashboard");
+
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const res = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    village_id: document.getElementById("village-id").value,
+                    password: document.getElementById("password").value
+                })
+            });
+
+            if (res.ok) {
+                loginPage.style.display = "none";
+                dashboard.style.display = "block";
+                fetchData();
+                fetchTimer = setInterval(fetchData, 30000);
+
+            } else {
+                alert("Invalid login");
+            }
+        });
+
+        async function fetchData() {
+            const res = await fetch("/api/latest");
+            const data = await res.json();
+
+            document.getElementById("ph-value").innerText =
+                data.ph !== null ? data.ph : "--";
+
+            document.getElementById("turbidity-value").innerText =
+                data.turbidity !== null ? data.turbidity + " NTU" : "--";
+
+            document.getElementById("temp-value").innerText =
+                data.temperature !== null ? data.temperature + " °C" : "--";
+
+            document.getElementById("tds-value").innerText =
+                data.tds !== null ? data.tds + " mg/L" : "--";
+
+
+            const overall = document.getElementById("overall-status");
+            overall.innerText = data.status;
+            overall.className = "value " + (data.status === "SAFE" ? "safe" : "unsafe");
+
+            const alertBox = document.getElementById("alert-box");
+            if (data.status === "UNSAFE") {
+                alertBox.innerHTML = `<h3>⚠ Water Unsafe</h3><p>${data.issues.join(", ")}</p>`;
+            } else {
+                alertBox.innerHTML = `<h3>No Active Alerts</h3><p>All parameters are within safe limits.</p>`;
+            }
+            document.getElementById("ml-output").innerText =
+                data.ml_output ?? "--";
+
+        }
+        function changeInterval() {
+            const sec = document.getElementById("interval").value;
+            clearInterval(fetchTimer);
+            fetchTimer = setInterval(fetchData, sec * 1000);
+        }
+
+    </script>
+
+</body>
+
+</html>
