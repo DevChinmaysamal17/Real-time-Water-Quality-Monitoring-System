@@ -10,7 +10,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const char* ssid = "Your Wifi Name";
 const char* password = "Wifi Password";
-const char* serverUrl = "http://10.32.36.22:5000/api/sensor";
+const char* serverUrl = "http://<ip>:5000/api/sensor";
 
 
 float calibration_value = 21.34 - 0.55;
