@@ -8,8 +8,8 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-const char* ssid = "Samarth's F36";
-const char* password = "sambambam";
+const char* ssid = "Your Wifi Name";
+const char* password = "Wifi Password";
 const char* serverUrl = "http://10.32.36.22:5000/api/sensor";
 
 
